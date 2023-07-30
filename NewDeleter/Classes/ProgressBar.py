@@ -14,19 +14,19 @@ class ProgressBar:
         self.number = number
         self.progress_bar = tqdm(total=self.number, unit="files")
         self.description = ""
-        self.progress= ""
+        self.progress = ""
 
-    def update(self, newDescriptionDeleted = "", newDescritpionProgress = ""):
+    def update(self, newDescriptionDeleted="", newDescritpionProgress=""):
         self.progress_bar.update(1)
 
         if newDescriptionDeleted:
-            self.description = "Fichier récemment supprimé : " + newDescriptionDeleted + "\n"
+            self.description = "Fichier récemment supprimé : " + newDescriptionDeleted
         if newDescritpionProgress:
             self.progress = "Fichier en cours de traitement : " + newDescritpionProgress
 
-        rt = {"description_key": self.description, "progress_key": self.progress}
-
-        self.progress_bar.set_postfix(rt)
+        # Mise à jour dynamique de la description sans ajouter de nouvelles lignes
+        description = f"{self.description} {self.progress}"
+        self.progress_bar.set_postfix_str(description, refresh=True)
 
     def decrement(self):
         self.progress_bar.update(-1)

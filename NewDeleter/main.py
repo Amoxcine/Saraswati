@@ -9,6 +9,8 @@ import hashlib
 # import ProgressBar
 from Classes.ProgressBar import ProgressBar
 
+activation_suppression = False
+
 
 def get_list_of_files(path):
     """
@@ -57,7 +59,7 @@ def supprimer_fichier(file_path1, duplicate_file_path, customlogger):
         # Compter le nombre de `\` dans le chemin
         return path.count(os.path.sep)
 
-    customlogger.log_message(f"Doublon trouvé : {file_path1} - {duplicate_file_path}")
+    customlogger.log_message(f"1 | {file_path1} -- {duplicate_file_path}")
 
     # Vérifier le nombre de `\` dans chaque chemin
     num_backslashes1 = count_backslashes(file_path1)
@@ -65,15 +67,19 @@ def supprimer_fichier(file_path1, duplicate_file_path, customlogger):
 
     # Supprimer le fichier ayant le moins de `\` dans son chemin
     deleted_file = None
-    if num_backslashes1 < num_backslashes2:
-        os.remove(file_path1)
-        deleted_file = file_path1
-    elif num_backslashes2 < num_backslashes1:
-        os.remove(duplicate_file_path)
-        deleted_file = duplicate_file_path
+    if activation_suppression:
+        if num_backslashes1 < num_backslashes2:
+            os.remove(file_path1)
+            customlogger.log_message(f"Suppression de {file_path1}")
+            deleted_file = file_path1
+
+        elif num_backslashes2 < num_backslashes1:
+            os.remove(duplicate_file_path)
+            customlogger.log_message(f"Suppression de {file_path1}")
+            deleted_file = duplicate_file_path
     else:
         # Si les chemins ont le même nombre de `\`, supprimer le deuxième fichier analysé
-        customlogger.log_message(f"2| {file_path1} >>>>> {duplicate_file_path}")
+        customlogger.log_message(f"2 | {file_path1} >>>>>>>>>> {duplicate_file_path}")
 
     customlogger.log_message("")
 
@@ -91,6 +97,7 @@ def filtrer_doublons(list_of_files, customlogger):
     """
     files_by_hash = {}
     progression = ProgressBar(len(list_of_files))
+    last_deleted_file = None
 
     for file_path in list_of_files:
         file_hash = calculate_file_hash(file_path)
@@ -103,15 +110,18 @@ def filtrer_doublons(list_of_files, customlogger):
 
         if duplicate_file_path:
             # Appeler la fonction pour supprimer le fichier en fonction du nombre de `\`
-            deleted_file = supprimer_fichier(file_path, duplicate_file_path, customlogger)
-            if deleted_file:
-                description_deleted = f"Fichier récemment supprimé : {deleted_file}"
-                progression.update(description_deleted)
-            else:
-                progression.update()
+            last_deleted_file = supprimer_fichier(file_path, duplicate_file_path, customlogger)
 
-    progression.end()
+        progression.update(last_deleted_file, file_path)
 
+
+def supprimer_dossiers_vides(dossier):
+    for root, dirs, files in os.walk(dossier, topdown=False):
+        for nom in dirs:
+            chemin_dossier = os.path.join(root, nom)
+            if len(os.listdir(chemin_dossier)) == 0:
+                print(f"Suppression du dossier vide : {chemin_dossier}")
+                os.rmdir(chemin_dossier)
 
 
 def main(customlogger, path_init, path_to_compare):
@@ -125,6 +135,8 @@ def main(customlogger, path_init, path_to_compare):
     list_of_files, list_of_files_name = get_list_of_files(path_init)
 
     filtrer_doublons(list_of_files, customlogger)
+
+    supprimer_dossiers_vides(path_init)
 
 
 if __name__ == "__main__":
