@@ -2,6 +2,8 @@ import dhash
 from PIL import Image
 
 def comparer_images(chemin_image1, chemin_image2):
+  # SI ce n'est pas un fichier qui se termine par ARW
+  if not chemin_image1.lower().endswith(".arw"):
     # Charger les images et les convertir en niveaux de gris
     image1 = Image.open(chemin_image1).convert('L')
     image2 = Image.open(chemin_image2).convert('L')
@@ -18,3 +20,5 @@ def comparer_images(chemin_image1, chemin_image2):
 
     # Si la similarité est inférieure au seuil, les images sont considérées comme identiques
     return similarite <= seuil
+  else:
+    return False

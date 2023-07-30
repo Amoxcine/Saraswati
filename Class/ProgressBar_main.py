@@ -12,5 +12,5 @@ class ProgressBar:
     def decrement(self):
         self.progress_bar.update(-1)
 
-    def close(self):
+    def end(self):
         self.progress_bar.close()
