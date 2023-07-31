@@ -16,11 +16,11 @@ class ProgressBar:
         self.description = ""
         self.progress = ""
 
-    def update(self, newDescriptionDeleted="", newDescritpionProgress=""):
+    def update(self, newDescriptionEvent="", newDescritpionProgress=""):
         self.progress_bar.update(1)
 
-        if newDescriptionDeleted:
-            self.description = "Fichier récemment supprimé : " + newDescriptionDeleted
+        if newDescriptionEvent:
+            self.description = "En cours : " + newDescriptionEvent
         if newDescritpionProgress:
             self.progress = "Fichier en cours de traitement : " + newDescritpionProgress
 

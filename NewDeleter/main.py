@@ -45,7 +45,7 @@ def calculate_file_hash(file_path):
     return md5_hash.hexdigest()
 
 
-def supprimer_fichier(file_path1, duplicate_file_path, customlogger):
+def supprimer_fichier(path_init, file_path1, duplicate_file_path, customlogger):
     """
     Supprime le fichier en fonction du nombre de `\` dans leur chemin.
 
@@ -59,35 +59,50 @@ def supprimer_fichier(file_path1, duplicate_file_path, customlogger):
         # Compter le nombre de `\` dans le chemin
         return path.count(os.path.sep)
 
-    customlogger.log_message(f"1 | {file_path1} -- {duplicate_file_path}")
+    customlogger.log_message(f"Doublons | {file_path1} -- {duplicate_file_path}")
 
     # Vérifier le nombre de `\` dans chaque chemin
     num_backslashes1 = count_backslashes(file_path1)
     num_backslashes2 = count_backslashes(duplicate_file_path)
 
     # Supprimer le fichier ayant le moins de `\` dans son chemin
-    deleted_file = None
+    last_event = None
+
     if activation_suppression:
         if num_backslashes1 < num_backslashes2:
             os.remove(file_path1)
             customlogger.log_message(f"Suppression de {file_path1}")
-            deleted_file = file_path1
+            last_event = file_path1
 
         elif num_backslashes2 < num_backslashes1:
             os.remove(duplicate_file_path)
             customlogger.log_message(f"Suppression de {file_path1}")
-            deleted_file = duplicate_file_path
-    else:
-        # Si les chemins ont le même nombre de `\`, supprimer le deuxième fichier analysé
-        customlogger.log_message(f"2 | {file_path1} >>>>>>>>>> {duplicate_file_path}")
+            last_event = duplicate_file_path
+
+    if num_backslashes1 == num_backslashes2:
+        # Créer un dossier
+        dossier = os.path.join(os.path.dirname(file_path1), "NewDeleter - Fusion doublons")
+        last_event = "Doublon : " + file_path1
+
+        if not os.path.exists(dossier):
+            os.mkdir(dossier)
+            customlogger.log_message(f"Création du dossier {dossier}")
+
+        # Déplacer le premier fichier dans le dossier
+        os.rename(file_path1, os.path.join(dossier, os.path.basename(file_path1)))
+        customlogger.log_message(f"Déplacement de {file_path1} dans {dossier}")
+
+        # Supprimer le deuxième fichier
+        os.remove(duplicate_file_path)
+        customlogger.log_message(f"Suppression de {duplicate_file_path}")
 
     customlogger.log_message("")
 
-    return deleted_file
+    return last_event
 
 
 
-def filtrer_doublons(list_of_files, customlogger):
+def filtrer_doublons(path_init, list_of_files, customlogger):
     """
     Cherche les doublons dans list_of_files en utilisant le hash MD5 du contenu binaire.
     Les doublons identiques sont enregistrés dans le CustomLogger.
@@ -97,7 +112,7 @@ def filtrer_doublons(list_of_files, customlogger):
     """
     files_by_hash = {}
     progression = ProgressBar(len(list_of_files))
-    last_deleted_file = None
+    last_event = None
 
     for file_path in list_of_files:
         file_hash = calculate_file_hash(file_path)
@@ -110,9 +125,9 @@ def filtrer_doublons(list_of_files, customlogger):
 
         if duplicate_file_path:
             # Appeler la fonction pour supprimer le fichier en fonction du nombre de `\`
-            last_deleted_file = supprimer_fichier(file_path, duplicate_file_path, customlogger)
+            last_event = supprimer_fichier(path_init, file_path, duplicate_file_path, customlogger)
 
-        progression.update(last_deleted_file, file_path)
+        progression.update(last_event, file_path)
 
 
 def supprimer_dossiers_vides(dossier):
@@ -124,7 +139,7 @@ def supprimer_dossiers_vides(dossier):
                 os.rmdir(chemin_dossier)
 
 
-def main(customlogger, path_init, path_to_compare):
+def main(customlogger, path_init):
     """
     Le programme consiste à utiliser une base de fichiers pour comparer les fichiers d'un dossier à traiter.
     Il faut alors trouver les doublons et les lister dans un logger.
@@ -134,14 +149,14 @@ def main(customlogger, path_init, path_to_compare):
 
     list_of_files, list_of_files_name = get_list_of_files(path_init)
 
-    filtrer_doublons(list_of_files, customlogger)
+    filtrer_doublons(path_init, list_of_files, customlogger)
 
     supprimer_dossiers_vides(path_init)
+
+    print("Fin du programme")
 
 
 if __name__ == "__main__":
     logger = CustomLogger("History.log")
-    path_init = r"E:\Me\IMGVD\Lieux - moments"
-    path_to_compare = ["C:\\Users\\julie\\Desktop\\NewDeleter\\to_compare\\1"]
-
-    main(logger, path_init, path_to_compare)
+    path_init = r"E:\Me\IMGVD"
+    main(logger, path_init)
