@@ -80,8 +80,8 @@ def supprimer_fichier(path_init, file_path1, duplicate_file_path, customlogger):
             last_event = duplicate_file_path
 
     if num_backslashes1 == num_backslashes2:
-        # Créer un dossier
-        dossier = os.path.join(os.path.dirname(file_path1), "NewDeleter - Fusion doublons")
+        # Créer un dossier dans path_init
+        dossier = os.path.join(path_init, "NewDeleter - Fusion doublons")
         last_event = "Doublon : " + file_path1
 
         if not os.path.exists(dossier):
@@ -99,6 +99,7 @@ def supprimer_fichier(path_init, file_path1, duplicate_file_path, customlogger):
     customlogger.log_message("")
 
     return last_event
+
 
 
 
