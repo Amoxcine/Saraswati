@@ -1,4 +1,5 @@
 from Classes.CustomLogger import CustomLogger
+import time
 
 # import pour get_list_of_files
 import os
@@ -9,7 +10,7 @@ import hashlib
 # import ProgressBar
 from Classes.ProgressBar import ProgressBar
 
-activation_suppression = False
+activation_suppression = True
 
 
 def get_list_of_files(path):
@@ -76,7 +77,7 @@ def supprimer_fichier(path_init, file_path1, duplicate_file_path, customlogger):
 
         elif num_backslashes2 < num_backslashes1:
             os.remove(duplicate_file_path)
-            customlogger.log_message(f"Suppression de {file_path1}")
+            customlogger.log_message(f"Suppression de {duplicate_file_path}")
             last_event = duplicate_file_path
 
     if num_backslashes1 == num_backslashes2:
@@ -147,12 +148,16 @@ def main(customlogger, path_init):
 
     Il doit respecter le principe Ouvert fermé.
     """
+    #Afficher Début du programme et l'heure dans logger
+    customlogger.log_message("\nDébut du programme " + time.strftime("|| %D | %H:%M:%S ||", time.localtime()))
 
     list_of_files, list_of_files_name = get_list_of_files(path_init)
 
     filtrer_doublons(path_init, list_of_files, customlogger)
 
     supprimer_dossiers_vides(path_init)
+
+    customlogger.log_message("|| Fin du programme" + time.strftime(" %D | %H:%M:%S ||", time.localtime()))
 
     print("Fin du programme")
 
