@@ -3,7 +3,8 @@ import time
 
 # import pour get_list_of_files
 import os
-
+import shutil
+from tqdm import tqdm
 # import pour calculate_file_hash
 import hashlib
 
@@ -17,6 +18,42 @@ activation_suppression = True
 
 
 
+def compare_and_delete_files(folder1, folder2):
+    num_files = count_files(folder1)
+    progress_bar = tqdm(total=num_files, unit="file(s)")
+
+    for root, dirs, files in os.walk(folder1):
+        for file in files:
+            file_path = os.path.join(root, file)
+            file_name = os.path.basename(file_path)
+
+            matching_files = find_matching_files(file_name, folder2)
+            if matching_files:
+                print(f"Suppression du fichier {file_path}")
+                os.remove(file_path)
+            progress_bar.update(1)
+
+    progress_bar.close()
+
+
+def find_matching_files(file_name, folder):
+    #Renvoie la liste des fichiers
+    matching_files = []
+    for root, dirs, files in os.walk(folder):
+        for file in files:
+            if file == file_name:
+                #Ajout dans la liste
+                matching_files.append(os.path.join(root, file))
+    return matching_files
+
+
+def count_files(folder):
+    num_files = 0
+    for root, dirs, files in os.walk(folder):
+        num_files += len(files)
+    return num_files
+
+#---------------------------------------------
 
 def supprimer_fichier(path_init, file_path1, duplicate_file_path, customlogger):
     """
@@ -41,42 +78,30 @@ def supprimer_fichier(path_init, file_path1, duplicate_file_path, customlogger):
     # Supprimer le fichier ayant le moins de `\` dans son chemin
     last_event = None
 
-    if activation_suppression:
-        if num_backslashes1 < num_backslashes2:
-            os.remove(file_path1)
-            customlogger.log_message(f"Suppression de {file_path1}")
-            last_event = file_path1
 
-        elif num_backslashes2 < num_backslashes1:
-            os.remove(duplicate_file_path)
-            customlogger.log_message(f"Suppression de {duplicate_file_path}")
-            last_event = duplicate_file_path
+    dossier = os.path.join(path_init, "NewDeleter - Fusion doublons")
+    last_event = "Doublon : " + file_path1
 
-    if num_backslashes1 == num_backslashes2:
-        # Créer un dossier dans path_init
-        dossier = os.path.join(path_init, "NewDeleter - Fusion doublons")
-        last_event = "Doublon : " + file_path1
+    if not os.path.exists(dossier):
+        os.mkdir(dossier)
+        customlogger.log_message(f"Création du dossier {dossier}")
 
-        if not os.path.exists(dossier):
-            os.mkdir(dossier)
-            customlogger.log_message(f"Création du dossier {dossier}")
+    # Si le fichier est déjà présent dans le dossier NewDeleter - Fusion doublons càd le fichier de destination, alors on supprime le fihcier le fichier qui aurait du être déplacé sinon fait la procédure habituelle qui est le déplacement du fichier dans le dossier NewDeleter - Fusion doublons
+    if os.path.exists(os.path.join(dossier, os.path.basename(file_path1))):
+        os.remove(file_path1)
+        customlogger.log_message(f"Suppression de {file_path1}")
+        customlogger.log_message("")
+        return last_event
+    else:
+        # Déplacer le premier fichier dans le dossier
+        os.rename(file_path1, os.path.join(dossier, os.path.basename(file_path1)))
+        customlogger.log_message(f"Déplacement de {file_path1} dans {dossier}")
 
-        # Si le fichier est déjà présent dans le dossier NewDeleter - Fusion doublons càd le fichier de destination, alors on supprime le fihcier le fichier qui aurait du être déplacé sinon fait la procédure habituelle qui est le déplacement du fichier dans le dossier NewDeleter - Fusion doublons
-        if os.path.exists(os.path.join(dossier, os.path.basename(file_path1))):
-            os.remove(file_path1)
-            customlogger.log_message(f"Suppression de {file_path1}")
-            customlogger.log_message("")
-            return last_event
-        else:
-            # Déplacer le premier fichier dans le dossier
-            os.rename(file_path1, os.path.join(dossier, os.path.basename(file_path1)))
-            customlogger.log_message(f"Déplacement de {file_path1} dans {dossier}")
-
-            # Supprimer le deuxième fichier
-            os.remove(duplicate_file_path)
-            customlogger.log_message(f"Suppression de {duplicate_file_path}")
-            customlogger.log_message("")
-            return last_event
+        # Supprimer le deuxième fichier
+        os.remove(duplicate_file_path)
+        customlogger.log_message(f"Suppression de {duplicate_file_path}")
+        customlogger.log_message("")
+        return last_event
 
 
 def filtrer_doublons(path_init, list_of_files, customlogger):
@@ -93,6 +118,8 @@ def filtrer_doublons(path_init, list_of_files, customlogger):
 
     for file_path in list_of_files:
         file_hash = calculate_file_hash(file_path)
+        customlogger.log_message(f"Hash du fichier {file_path} : {file_hash}")
+        exit(-1)
         duplicate_file_path = None
 
         if file_hash in files_by_hash:
@@ -139,5 +166,15 @@ def main(customlogger, path_init):
 
 if __name__ == "__main__":
     logger = CustomLogger("History.log")
-    path_init = r"C:\Users\avets\Desktop\Takeout\Google Photos"
-    main(logger, path_init)
+
+    dossier1 = r"C:\Users\avets\Desktop\Atrier" #Les images qui sont dedans sont supprimées
+    dossier2 = r"E:"
+
+    print(dossier1)
+    print(dossier2)
+
+    compare_and_delete_files(dossier1, dossier2)
+
+    #path_init = r"C:\Users\avets\Desktop\Takeout\Google Photos"
+    #path2 = r"C:\Users\avets\Desktop\Takeout\Google Photos\NewDeleter - Fusion doublons"
+    #main(logger, path_init)
